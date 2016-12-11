@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) 2016 Joakim Åkerblom
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>MY CATALOG</title>
+    <meta name="description" content="En interaktiv genomgång av Brackets.">
+    <script>
+        /* 
+         * PLEASE MODIFY THIS DATA !!!
+         * ===========================
+         * Columns list decides whish columns to be viewed and in which order.
+         * Items is the list of objects to list and filter.
+         *
+         */
+        var columns = ["id", "title", "group"];
+        var items = [{
+            id: 'dog',
+            title: 'Pluto',
+            group: 'animal'
+        }, {
+            id: 'tree',
+            title: 'Oak',
+            group: 'plant'
+        }, {
+            id: 'cat',
+            title: 'Garfield',
+            group: 'animal'
+        }, {
+            id: 'flower',
+            title: 'Rose',
+            group: 'plant'
+        }];
+
+    </script>
+    <style>
+        body {
+            text-align: center;
+        }
+        
+        #catalog tr td {
+            padding-left: 1em;
+            padding-right: 1em;
+            text-align: left;
+        }
+        
+        #catalog,
+        #filter {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        #filter {
+            padding: 2em
+        }
+        
+        .heading {
+            background-color: #ccc;
+        }
+        
+        .heading td {
+            font-weight: bold;
+            font-family: sans-serif;
+            margin: 0px;
+            border: 0px;
+            padding: 1em;
+        }
+        
+        .item td {
+            font-style: italic;
+            font-family: serif;
+            margin: 0px;
+            border: 0px;
+        }
+        
+        .item td {
+            border-bottom: thin dotted #ccc;
+        }
+        
+        #about {
+            font-size: 0.5em;
+            position: fixed;
+            top: 1em;
+            right: 1em;
+            text-align: right;
+        }
+        
+        #clearFilter {
+            /*font-weight: bold;*/
+            visibility: hidden;
+        }
+
+    </style>
+</head>
+
+<body id="body">
+    <div id="filter">
+        <input id="search" type="text" placeholder="filter" />
+        <input type="button" id="clearFilter" value="Clear (Esc)" /> </div>
+    <table id="catalog"></table>
+    <div id="about">web catalog v0.1
+        <br><a href="http://github.com/jockbert/web-catalog/">github</a></div>
+    <script>
+        /** Create table content. */
+        function showItems(cols, items) {
+            var content = "<tr class='heading'>";
+            cols.forEach(col => content += "<td>" + col + "</td>");
+            content += "</tr>";
+            items.forEach(item => {
+                content += "<tr class='item'>";
+                cols.forEach(col => content += "<td>" + item[col] + "</td>");
+                content += "</tr>";
+            });
+            catalog.innerHTML = content;
+        };
+
+        function splitInTuples(text) {
+            text = text.toLowerCase();
+            result = {};
+            if (text.length > 1) {
+                for (var i = 1; i < text.length; i++) {
+                    var key = text.charAt(i - 1) + text.charAt(i);
+                    if (result[key] == undefined) {
+                        result[key] = 0;
+                    }
+                    result[key] += 1;
+                }
+            }
+            return result;
+        }
+
+        function subSet(tuples1, tuples2) {
+            var result = {};
+            Object.keys(tuples1).forEach(key => {
+                if (tuples2.hasOwnProperty(key)) {
+                    var count1 = tuples1[key];
+                    var count2 = tuples2[key];
+                    result[key] = Math.min(count1, count2);
+                }
+            });
+            return result;
+        }
+
+        function countTuples(tuples) {
+            tuples = tuples || {};
+            var result = 0;
+            Object.values(tuples).forEach(tupleCount => result += tupleCount);
+            return result;
+        }
+        var LEX_GLUE = '½'; // Uses glue character high up in the (extended) ASCII table to give a good lexicographical sort behavior.
+        var SORT_KEY = "$$sort$$";
+        var TUPLES_KEY = "$$tuples$$";
+        var FILTER_MATCH_KEY = "$$match$$";
+        var FULL_MATCH = 1;
+        var MINIMUM_MATCH = 0.4;
+        var input = document.getElementById("search");
+        var clearFilter = document.getElementById("clearFilter");
+        var catalog = document.getElementById("catalog");
+
+        function addLexSortKey(keys, item) {
+            var sortValue = keys.map(key => item[key] || "").join(LEX_GLUE);
+            item[SORT_KEY] = sortValue;
+        }
+
+        function addTuples(keys, item) {
+            var baseText = keys.map(key => item[key] || "").join(' ');
+            item[TUPLES_KEY] = splitInTuples(baseText);
+        }
+
+        function addFilterMatchPercent(filterTuples, item) {
+            var subsetTuples = subSet(filterTuples, item[TUPLES_KEY]);
+            var filterCount = countTuples(filterTuples);
+            var actualCount = countTuples(subsetTuples);
+            var matchPercent = (filterCount < 1) ? FULL_MATCH : actualCount / filterCount;
+            item[FILTER_MATCH_KEY] = matchPercent;
+        }
+
+        function filterItems(filterText) {
+            items.forEach(item => addFilterMatchPercent(splitInTuples(filterText), item));
+            items.sort((a, b) => a[FILTER_MATCH_KEY] != b[FILTER_MATCH_KEY] ? a[FILTER_MATCH_KEY] < b[FILTER_MATCH_KEY] : a[SORT_KEY] > b[SORT_KEY]);
+            showItems(columns, items.filter(i => i[FILTER_MATCH_KEY] > MINIMUM_MATCH));
+        }
+
+        function showClearFilter() {
+            clearFilter.style.visibility = (input.value != "") ? "visible" : "hidden";
+        }
+
+        function filterEvent() {
+            showClearFilter();
+            filterItems(input.value);
+        }
+
+        function clearInput() {
+            input.value = "";
+            filterEvent();
+        }
+
+        function addEscapeListener(elem, type) {
+            elem.addEventListener(type, e => {
+                if (e.which == 27 || e.keyCode == 27 || e.key == "Escape") clearInput();
+            });
+        }
+
+        /* Set up listeners. */
+        addEscapeListener(document, "keydown"); // Crome
+        addEscapeListener(input, "keypress"); // Firefox
+        input.addEventListener('input', filterEvent);
+        clearFilter.addEventListener('click', clearInput);
+
+        /* Data processing and presentation. */
+        items.forEach(item => addLexSortKey(columns, item));
+        items.forEach(item => addTuples(columns, item));
+        filterEvent();
+        showClearFilter();
+        input.focus();
+
+    </script>
+</body>
+
+</html>
