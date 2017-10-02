@@ -12,34 +12,46 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>MY CATALOG</title>
-    <meta name="description" content="En interaktiv genomgång av Brackets.">
     <script>
         /* 
-         * PLEASE MODIFY THIS DATA !!!
-         * ===========================
-         * Columns list decides whish columns to be viewed and in which order.
-         * Items is the list of objects to list and filter.
-         *
+         * PLEASE MODIFY THIS SAMPLE DATA !!!
+         * ====================================
+         * The list in variable named 'colums' decides which columns to be
+         * viewed and in which order.Variable named 'items' is the list of
+         * objects to list and filter.
          */
-        var columns = ["id", "title", "group"];
+        var columns = ["id", "title", "group", "likes"];
         var items = [{
             id: 'dog',
             title: 'Pluto',
             group: 'animal'
         }, {
-            id: 'tree',
-            title: 'Oak',
-            group: 'plant'
+            id: 'car',
+            title: 'Corvette',
+            group: 'vehicle'
         }, {
             id: 'cat',
             title: 'Garfield',
-            group: 'animal'
+            group: 'animal',
+            likes: "lasanga"
+        }, {
+            id: 'tree',
+            title: 'Oak',
+            group: 'plant',
+	          keyNotInColumnsIsInvisibel: "tada!!"
         }, {
             id: 'flower',
             title: 'Rose',
             group: 'plant'
+        }, {
+            id: 'bicycle',
+            title: 'Penny-farthing',
+            group: 'vehicle'
+        }, {
+            id: 'razors',
+            title: 'Gillette',
+            group: 'tool'
         }];
 
     </script>
@@ -118,7 +130,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
             content += "</tr>";
             items.forEach(item => {
                 content += "<tr class='item'>";
-                cols.forEach(col => content += "<td>" + item[col] + "</td>");
+                cols.forEach(col => content += "<td>" + (item[col] || "") + "</td>");
                 content += "</tr>";
             });
             catalog.innerHTML = content;

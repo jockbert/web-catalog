@@ -1,6 +1,6 @@
 Web Catalog
 
-Simple HTML based generic catalog to list things. Features:
+Simple HTML-based generic catalog to list things. Features:
 
 * Fast filtering of items, using a novel character-pair-similarity-technique to handle spelling errors and other textual differences. 
 * Press Escape to clear filter.
